@@ -121,7 +121,7 @@ class AddrField:
     @classmethod
     def init_by_raw(cls, _type: str, length: int, service_centre_address_type: bytes, service_centre_address: bytes):
         _ = int.from_bytes(service_centre_address_type)
-        type_of_address: int = _ & 0b10000000 # bit 7
+        type_of_address: int = _ & 0b10000000  # bit 7
         type_of_number: int = _ & 0b01110000  # bit 6 5 4
         number_plan_identification: int = _ & 0b00001111  # bit 3 2 1 0
 
@@ -397,7 +397,12 @@ def update_netkeeper_password():
                 logger.debug(f"command: {cmd}")
                 logger.debug(f"response: {resp}")
                 current_time = math.ceil(time.time())
-                sleep_time = netkeeper_password_expiry_time - current_time + 1 * 60  # 到期1分钟后刷新密码，而不是提前获取原密码
+                sleep_time = netkeeper_password_expiry_time - current_time + 2 * 60  # 到期2分钟后刷新密码
+                if sleep_time < 0:  # 如果暂时没有更新 1分钟后重试
+                    logger.warning(f"invalid sleep time")
+                    sleep_time = 60
+                    logger.info(f"sleep for {sleep_time} seconds")
+
                 logger.info(f"sleep for {sleep_time} seconds")
                 time.sleep(sleep_time)
             else:
@@ -406,6 +411,7 @@ def update_netkeeper_password():
         else:
             logger.fatal("check failed")
             exit(1)
+
 
 app = Flask(__name__)
 
